@@ -194,16 +194,33 @@ struct ProjectsUI: View {
     }
 
     private func getKurumlar(tur: String) {
-        filtreDataAccess.getKurumlar(tur: tur) { kurumlar in
-            DispatchQueue.main.async { self.kurumlar = kurumlar }
+        filtreDataAccess.getKurumlar(tur: tur) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let kurumlar):
+                    self.kurumlar = kurumlar  // Success durumunda kurumları alıyoruz
+                case .failure(let error):
+                    print("Hata: \(error.localizedDescription)")  // Hata durumunda hata mesajını yazdırıyoruz
+                    self.kurumlar = []  // Hata durumunda kurumlar dizisini boş bırakıyoruz
+                }
+            }
         }
     }
 
     private func getSektorler() {
-        filtreDataAccess.getSektorler { sektorler in
-            DispatchQueue.main.async { self.sektorler = sektorler }
+        filtreDataAccess.getSektorler { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let sektorler):
+                    self.sektorler = sektorler  // Success durumunda sektörleri alıyoruz
+                case .failure(let error):
+                    print("Hata: \(error.localizedDescription)")  // Hata durumunda hata mesajını yazdırıyoruz
+                    self.sektorler = []  // Hata durumunda sektörler dizisini boş bırakıyoruz
+                }
+            }
         }
     }
+
     
     private func performTokenRefresh() {
         // Not: Projende UserDataAccess kullanıyorsun, ona dokunmadım

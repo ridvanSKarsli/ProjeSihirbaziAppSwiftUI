@@ -1,159 +1,74 @@
-//
-//  FiltreDataAccess.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class FiltreDataAccess: FiltreInterface{
+class FiltreDataAccess: FiltreService {
     
-    func getKurumlar(tur: String, completion: @escaping ([String]) -> Void) {
+    // NetworkError enum'u
+    enum NetworkError: Error {
+        case invalidURL
+        case noData
+        case decodingError(String)
+    }
+    
+    // Genel veri çekme fonksiyonu
+    private func fetchData<T: Decodable>(urlString: String, completion: @escaping (Result<T, Error>) -> Void) {
+        guard let url = URL(string: urlString) else {
+            completion(.failure(NetworkError.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        request.httpMethod = "GET"
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            // Hata varsa
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NetworkError.noData))
+                return
+            }
+            
+            do {
+                let decodedData = try JSONDecoder().decode(T.self, from: data)
+                completion(.success(decodedData))
+            } catch {
+                completion(.failure(NetworkError.decodingError(error.localizedDescription)))
+            }
+        }
+        
+        task.resume()
+    }
+    
+    // `getKurumlar` verisini çekme
+    func getKurumlar(tur: String, completion: @escaping (Result<[String], Error>) -> Void) {
         let urlString = APIEndpoints.getKurumURL(tur: tur)
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL")
-            completion([])
-            return
-        }
-        
-        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
-        request.httpMethod = "GET"
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
-                print("Error: \(String(describing: error))")
-                completion([])
-                return
-            }
-
-            do {
-                let kurumlar = try JSONDecoder().decode([String].self, from: data)
-                completion(kurumlar)
-            } catch {
-                print("JSON parsing error: \(error.localizedDescription)")
-                completion([])
-            }
-        }
-        
-        task.resume()
+        fetchData(urlString: urlString, completion: completion)
     }
     
-    func getSektorler(completion: @escaping ([String]) -> Void) {
+    // `getSektorler` verisini çekme
+    func getSektorler(completion: @escaping (Result<[String], Error>) -> Void) {
         let urlString = APIEndpoints.getSectors.url
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL")
-            completion([])
-            return
-        }
-        
-        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
-        request.httpMethod = "GET"
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
-                print("Error: \(String(describing: error))")
-                return
-            }
-
-            do {
-                let sectors = try JSONDecoder().decode([String].self, from: data)
-                completion(sectors)
-            } catch {
-                print("JSON parsing error:ge \(error.localizedDescription)")
-                completion([])
-            }
-        }
-
-        task.resume()
+        fetchData(urlString: urlString, completion: completion)
     }
     
-    func getIl(completion: @escaping ([String]) -> Void) {
-           guard let url = URL(string: APIEndpoints.provinces.url) else {
-               print("Invalid URL")
-               completion([])
-               return
-           }
-           
-           var request = URLRequest(url: url, timeoutInterval: Double.infinity)
-           request.httpMethod = "GET"
-
-           let task = URLSession.shared.dataTask(with: request) { data, response, error in
-               guard let data = data else {
-                   print("Error: \(String(describing: error))")
-                   completion([])
-                   return
-               }
-
-               do {
-                   let provinces = try JSONDecoder().decode([String].self, from: data)
-                   completion(provinces)
-               } catch {
-                   print("JSON parsing error: \(error.localizedDescription)")
-                   completion([])
-               }
-           }
-
-           task.resume()
-       }
-       
-       func getUni(completion: @escaping ([String]) -> Void) {
-           guard let url = URL(string: APIEndpoints.universities.url) else {
-               print("Invalid URL")
-               completion([])
-               return
-           }
-           
-           var request = URLRequest(url: url, timeoutInterval: Double.infinity)
-           request.httpMethod = "GET"
-
-           let task = URLSession.shared.dataTask(with: request) { data, response, error in
-               guard let data = data else {
-                   print("Error: \(String(describing: error))")
-                   completion([])
-                   return
-               }
-
-               do {
-                   let universities = try JSONDecoder().decode([String].self, from: data)
-                   completion(universities)
-               } catch {
-                   print("JSON parsing error: \(error.localizedDescription)")
-                   completion([])
-               }
-           }
-
-           task.resume()
-       }
-       
-       func getKeyword(completion: @escaping ([String]) -> Void) {
-           guard let url = URL(string: APIEndpoints.keywordsurl.url) else {
-               print("Invalid URL")
-               completion([])
-               return
-           }
-           
-           var request = URLRequest(url: url, timeoutInterval: Double.infinity)
-           request.httpMethod = "GET"
-
-           let task = URLSession.shared.dataTask(with: request) { data, response, error in
-               guard let data = data else {
-                   print("Error: \(String(describing: error))")
-                   completion([])
-                   return
-               }
-
-               do {
-                   let keywords = try JSONDecoder().decode([String].self, from: data)
-                   completion(keywords)
-               } catch {
-                   print("JSON parsing error: \(error.localizedDescription)")
-                   completion([])
-               }
-           }
-
-           task.resume()
-       }
-   
-
+    // `getIl` verisini çekme
+    func getIl(completion: @escaping (Result<[String], Error>) -> Void) {
+        let urlString = APIEndpoints.provinces.url
+        fetchData(urlString: urlString, completion: completion)
+    }
+    
+    // `getUni` verisini çekme
+    func getUni(completion: @escaping (Result<[String], Error>) -> Void) {
+        let urlString = APIEndpoints.universities.url
+        fetchData(urlString: urlString, completion: completion)
+    }
+    
+    // `getKeyword` verisini çekme
+    func getKeyword(completion: @escaping (Result<[String], Error>) -> Void) {
+        let urlString = APIEndpoints.keywordsurl.url
+        fetchData(urlString: urlString, completion: completion)
+    }
 }

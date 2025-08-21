@@ -24,7 +24,6 @@ struct FilterViewAcedemician: View {
             ScrollView {
                 VStack(spacing: AppTheme.Spacing.l) {
                     
-                    // Üniversite
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.m) {
                             Text("Üniversite")
@@ -47,7 +46,6 @@ struct FilterViewAcedemician: View {
                         }
                     }
                     
-                    // İl
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.m) {
                             Text("İl")
@@ -70,7 +68,6 @@ struct FilterViewAcedemician: View {
                         }
                     }
                     
-                    // Anahtar kelime
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.m) {
                             Text("Anahtar Kelime")
@@ -93,7 +90,6 @@ struct FilterViewAcedemician: View {
                         }
                     }
                     
-                    // Butonlar
                     HStack(spacing: AppTheme.Spacing.m) {
                         Button("Temizle") {
                             selectedUniversity = ""
@@ -124,7 +120,6 @@ struct FilterViewAcedemician: View {
         }
     }
     
-    // MARK: - Reusable subviews
     private func searchField(placeholder: String, text: Binding<String>, isOpen: Binding<Bool>) -> some View {
         HStack(spacing: 8) {
             TextField(placeholder, text: text)
@@ -192,8 +187,7 @@ struct FilterViewAcedemician: View {
         .foregroundStyle(AppTheme.primary)
         .clipShape(Capsule())
     }
-    
-    // MARK: - Filters
+
     private var filteredUniversities: [String] {
         searchUniversity.isEmpty ? universiteler
         : universiteler.filter { $0.localizedCaseInsensitiveContains(searchUniversity) }

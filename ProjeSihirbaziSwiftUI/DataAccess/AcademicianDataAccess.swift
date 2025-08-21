@@ -1,49 +1,56 @@
-//
-//  AcademicianDataAccess.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class AcademicianDataAccess: AcademicianInterface{
-    func getAcademics(currentPage: Int, selectedName: String, selectedProvince: String, selectedUniversity: String, selectedKeywords: String, completion: @escaping ([Academician]?, String?, Int?) -> Void) {
+class AcademicianDataAccess: AcademicianService {
+    
+    // Hata türlerini burada tanımlıyoruz
+    enum NetworkError: Error {
+        case invalidURL
+        case noData
+        case decodingError(String)
+    }
+    
+    func getAcademics(currentPage: Int, selectedName: String, selectedProvince: String, selectedUniversity: String, selectedKeywords: String, completion: @escaping (Result<[Academician], Error>) -> Void) {
+        
+        // URL'yi oluşturuyoruz
         guard let url = URL(string: APIEndpoints.getAcademicsURL(currentPage: currentPage, selectedName: selectedName, selectedProvince: selectedProvince, selectedUniversity: selectedUniversity, selectedKeywords: selectedKeywords)) else {
-            completion(nil, "Geçersiz URL", nil)
+            completion(.failure(NetworkError.invalidURL))  // Hatalı URL durumu
             return
         }
         
         var request = URLRequest(url: url, timeoutInterval: Double.infinity)
         request.httpMethod = "GET"
         
+        // Veri çekme işlemi
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
+                // Eğer hata varsa, onu döndürüyoruz
                 if let error = error {
-                    completion(nil, error.localizedDescription, nil)
+                    completion(.failure(error))  // Hata durumunda error'ü döndür
                     return
                 }
+                
                 guard let data = data else {
-                    completion(nil, "Veri alınamadı: \(error?.localizedDescription ?? "Bilinmeyen hata")", nil)
+                    completion(.failure(NetworkError.noData))  // Veri yoksa noData hatası
                     return
                 }
                 
                 do {
+                    // JSON verisini çözümlemeye çalışıyoruz
                     let decoder = JSONDecoder()
                     let response = try decoder.decode(ResponseAcademican.self, from: data)
                     
-                    // Başarıyla veriyi aldık, sonucu callback fonksiyonuna gönderiyoruz
-                    completion(response.items, nil, response.totalPages)
+                    // Başarıyla veriyi aldık, sonucu döndürüyoruz
+                    completion(.success(response.items))  // Başarıyla akademisyen verilerini döndürüyoruz
                 } catch {
-                    completion(nil, "JSON ayrıştırma hatası: \(error.localizedDescription)", nil)
+                    // JSON çözümleme hatası
+                    completion(.failure(NetworkError.decodingError(error.localizedDescription)))  // JSON ayrıştırma hatasını döndürüyoruz
                 }
             }
         }
         
-        task.resume()
+        task.resume()  // Veri çekme işlemini başlatıyoruz
     }
 }
-
 
 // API'den gelen yanıtın modeli
 struct ResponseAcademican: Codable {
@@ -53,4 +60,3 @@ struct ResponseAcademican: Codable {
     let totalPages: Int
     let items: [Academician]
 }
-

@@ -60,9 +60,6 @@ struct MainMenuUI: View {
                         }
                     }
                 }
-                
-                // İsteğe bağlı başka kısım eklemek istersen buraya AppCard koyabiliriz
-                // Örn: Son aramalar, öneriler, favoriler vs.
             }
             .appPadding()
         }
@@ -95,14 +92,15 @@ struct MainMenuUI: View {
     // MARK: Data
     private func getDashboardData() {
         let dashboardDataAccess = DashboardManager()
-        dashboardDataAccess.getDashboardData { fetchedDashboard in
+        dashboardDataAccess.fetchDashboardData { result in
             DispatchQueue.main.async {
-                if let dashboard = fetchedDashboard {
-                    grantCount = dashboard.getGrantCount()
-                    academicianCount = dashboard.getAcademicianCount()
-                    tenderCount = dashboard.getTenderCount()
-                } else {
-                    alertMessage = "Veriler alınamadı. Lütfen tekrar deneyin."
+                switch result {
+                case .success(let dashboard):
+                    grantCount = dashboard.grantCount
+                    academicianCount = dashboard.academicianCount
+                    tenderCount = dashboard.tenderCount
+                case .failure(let error):
+                    alertMessage = "Veriler alınamadı. Hata: \(error.localizedDescription)"
                     showAlert = true
                 }
             }

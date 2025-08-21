@@ -1,19 +1,10 @@
-//
-//  DashboardManager.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class DashboardManager: DashboardInterface{
+class DashboardManager: DashboardService {
     
     private let dashboardDataAccess = DashboardDataAccess()
     
-    func getDashboardData(completion: @escaping (Dashboard?) -> Void) {
-        dashboardDataAccess.getDashboardData(completion: completion)
+    func fetchDashboardData(completion: @escaping (Result<Dashboard, Error>) -> Void) {
+        dashboardDataAccess.fetchDashboardData(completion: completion)
     }
-    
-    
 }

@@ -17,9 +17,7 @@ struct AcademicsUI: View {
     @State private var totalPages = 1
     
     var body: some View {
-        // DİKKAT: Burada NavigationStack YOK (kökte var)
         VStack(spacing: AppTheme.Spacing.m) {
-            // Arama (AppTheme ile)
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Ad ara", text: $selectedName)
@@ -50,7 +48,6 @@ struct AcademicsUI: View {
             .appPadding()
             .padding(.top, AppTheme.Spacing.m)
             
-            // Liste
             ScrollView {
                 VStack(spacing: AppTheme.Spacing.s) {
                     if isLoading {
@@ -70,7 +67,6 @@ struct AcademicsUI: View {
                 .padding(.bottom, AppTheme.Spacing.l)
             }
             
-            // Sayfalama
             HStack {
                 Button {
                     guard currentPage > 1 else { return }
@@ -155,36 +151,60 @@ struct AcademicsUI: View {
             selectedProvince: selectedProvince,
             selectedUniversity: selectedUniversity,
             selectedKeywords: selectedKeywords
-        ) { academics, error, total in
+        ) { result in
             DispatchQueue.main.async {
                 isLoading = false
-                if let error = error {
-                    print("Hata: \(error)")
-                } else if let academics = academics {
+                switch result {
+                case .success(let academics):
                     self.academicsArr = academics
-                    self.totalPages = max(total ?? 1, 1)
+                    self.totalPages = academics.count > 0 ? max(academics.count / 10, 1) : 1
+                case .failure(let error):
+                    print("Hata: \(error)")
                 }
             }
         }
     }
 
     private func getIl() {
-        filtreDataAccess.getIl { iller in
-            DispatchQueue.main.async { self.iller = iller }
+        filtreDataAccess.getIl { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let iller):
+                    self.iller = iller  // Success durumunda illeri alıyoruz
+                case .failure(let error):
+                    print("Hata: \(error.localizedDescription)")  // Hata durumunda hata mesajını yazdırıyoruz
+                    self.iller = []  // Hata durumunda iller dizisini boş bırakıyoruz
+                }
+            }
         }
     }
 
     private func getUni() {
-        filtreDataAccess.getUni { universities in
-            DispatchQueue.main.async { self.universiteler = universities }
+        filtreDataAccess.getUni { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let universities):
+                    self.universiteler = universities  // Success durumunda üniversiteleri alıyoruz
+                case .failure(let error):
+                    print("Hata: \(error.localizedDescription)")  // Hata durumunda hata mesajını yazdırıyoruz
+                    self.universiteler = []  // Hata durumunda üniversiteler dizisini boş bırakıyoruz
+                }
+            }
         }
     }
 
     private func getKeyword() {
-        filtreDataAccess.getKeyword { keys in
-            DispatchQueue.main.async { self.anahtarKelimeler = keys }
+        filtreDataAccess.getKeyword { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let keys):
+                    self.anahtarKelimeler = keys  // Success durumunda anahtar kelimeleri alıyoruz
+                case .failure(let error):
+                    print("Hata: \(error.localizedDescription)")  // Hata durumunda hata mesajını yazdırıyoruz
+                    self.anahtarKelimeler = []  // Hata durumunda anahtar kelimeler dizisini boş bırakıyoruz
+                }
+            }
         }
     }
-}
 
-#Preview { AcademicsUI() }
+}

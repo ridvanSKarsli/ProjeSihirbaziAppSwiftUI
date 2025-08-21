@@ -1,23 +1,25 @@
-//
-//  DashboardDataAccess.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class DashboardDataAccess: DashboardInterface{
+class DashboardDataAccess: DashboardService {
     
-    func getDashboardData(completion: @escaping (Dashboard?) -> Void) {
-        var request = URLRequest(url: URL(string: APIEndpoints.dashboard.url)!, timeoutInterval: Double.infinity)
+    func fetchDashboardData(completion: @escaping (Result<Dashboard, Error>) -> Void) {
+        guard let url = URL(string: APIEndpoints.dashboard.url) else {
+            completion(.failure(NetworkError.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
         request.httpMethod = "GET"
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))  // Handle failure with error
+                    return
+                }
+                
                 guard let data = data else {
-                    print("Veri alınamadı.")
-                    completion(nil)
+                    completion(.failure(NetworkError.noData))  // Handle failure with no data
                     return
                 }
                 
@@ -28,16 +30,19 @@ class DashboardDataAccess: DashboardInterface{
                         let tenderCount = json["tenderCount"] as? Int ?? 0
                         
                         let dashboard = Dashboard(grantCount: grantCount, academicianCount: academicianCount, tenderCount: tenderCount)
-                        completion(dashboard)  // Dashboard nesnesini döndür
+                        completion(.success(dashboard))  // Return the parsed dashboard data
                     }
                 } catch {
-                    print("JSON ayrıştırma hatası: \(error.localizedDescription)")
-                    completion(nil)
+                    completion(.failure(error))  // Handle JSON parsing error
                 }
             }
         }
         
         task.resume()
     }
-    
+}
+
+enum NetworkError: Error {
+    case invalidURL
+    case noData
 }

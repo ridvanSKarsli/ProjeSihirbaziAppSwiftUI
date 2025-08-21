@@ -1,35 +1,26 @@
-//
-//  FiltreManager.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class FiltreManager: FiltreInterface{
+class FiltreManager: FiltreService {
     
     private let filtreDataAccess = FiltreDataAccess()
     
-    func getKurumlar(tur: String, completion: @escaping ([String]) -> Void) {
+    func getKurumlar(tur: String, completion: @escaping (Result<[String], Error>) -> Void) {
         filtreDataAccess.getKurumlar(tur: tur, completion: completion)
     }
     
-    func getSektorler(completion: @escaping ([String]) -> Void) {
+    func getSektorler(completion: @escaping (Result<[String], Error>) -> Void) {
         filtreDataAccess.getSektorler(completion: completion)
     }
     
-    func getIl(completion: @escaping ([String]) -> Void) {
+    func getIl(completion: @escaping (Result<[String], Error>) -> Void) {
         filtreDataAccess.getIl(completion: completion)
     }
     
-    func getUni(completion: @escaping ([String]) -> Void) {
+    func getUni(completion: @escaping (Result<[String], Error>) -> Void) {
         filtreDataAccess.getUni(completion: completion)
     }
     
-    func getKeyword(completion: @escaping ([String]) -> Void) {
+    func getKeyword(completion: @escaping (Result<[String], Error>) -> Void) {
         filtreDataAccess.getKeyword(completion: completion)
     }
-    
-    
 }

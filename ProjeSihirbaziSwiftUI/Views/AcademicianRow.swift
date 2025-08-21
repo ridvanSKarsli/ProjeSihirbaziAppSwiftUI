@@ -5,33 +5,30 @@ struct AcademicianRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: AppTheme.Spacing.m) {
-            // Avatar
             avatar
                 .frame(width: 64, height: 64)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(AppTheme.border, lineWidth: 1))
             
-            // Metinler
             VStack(alignment: .leading, spacing: 4) {
-                Text(academician.getName())
+                Text(academician.name)  // Direct access to 'name'
                     .font(.body.weight(.semibold))
                 
-                Text(academician.getUniversity())
+                Text(academician.university)  // Direct access to 'university'
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 
-                // Etiketler
                 HStack(spacing: 8) {
-                    if !academician.getTitle().isEmpty {
-                        tag(academician.getTitle())
+                    if !academician.title.isEmpty {
+                        tag(academician.title)  // Direct access to 'title'
                     }
-                    if !academician.getSection().isEmpty {
-                        tag(academician.getSection())
+                    if !academician.section.isEmpty {
+                        tag(academician.section)  // Direct access to 'section'
                     }
                 }
                 
-                if !academician.getKeywords().isEmpty {
-                    Text(academician.getKeywords())
+                if !academician.keywords.isEmpty {
+                    Text(academician.keywords)  // Direct access to 'keywords'
                         .font(.footnote)
                         .foregroundStyle(AppTheme.primary)
                         .lineLimit(2)
@@ -42,10 +39,9 @@ struct AcademicianRow: View {
         .padding(.vertical, 8)
     }
     
-    // MARK: - Subviews
     private var avatar: some View {
         Group {
-            if let url = URL(string: "https://projesihirbaziapi.enmdigital.com" + academician.getImageUrl()) {
+            if let url = URL(string: "https://projesihirbaziapi.enmdigital.com" + academician.imageUrl) {  // Direct access to 'imageUrl'
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
