@@ -1,33 +1,30 @@
-//
-//  ProjeSihirbaziAIManager.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
+// ProjeSihirbaziAIManager.swift
 import Foundation
 
-class ProjeSihirbaziAIManager: ProjeSihirbaziAIInterface{
+final class ProjeSihirbaziAIManager: ProjeSihirbaziAIService {
+    private let dataAccess: ProjeSihirbaziAIDataAccess
     
-    private let projeSihirbaziAIDataAccess = ProjeSihirbaziAIDataAccess()
-    
-    func getOldChat(projectId: Int, token: String, completion: @escaping ([ProjeSihirbaziAI]?) -> Void) {
-        projeSihirbaziAIDataAccess.getOldChat(projectId: projectId, token: token, completion: completion)
+    init(dataAccess: ProjeSihirbaziAIDataAccess = .init()) {
+        self.dataAccess = dataAccess
     }
     
-    func createNewChat(projectId: Int, token: String, completion: @escaping (ProjeSihirbaziAI?) -> Void) {
-        projeSihirbaziAIDataAccess.createNewChat(projectId: projectId, token: token, completion: completion)
+    func getOldChat(projectId: Int, token: String, completion: @escaping (Result<[ProjeSihirbaziAI], Error>) -> Void) {
+        dataAccess.getOldChat(projectId: projectId, token: token, completion: completion)
     }
     
-    func deleteChat(token: String, chatId: Int, completion: @escaping (Bool) -> Void) {
-        projeSihirbaziAIDataAccess.deleteChat(token: token, chatId: chatId, completion: completion)
+    func createNewChat(projectId: Int, token: String, completion: @escaping (Result<ProjeSihirbaziAI, Error>) -> Void) {
+        dataAccess.createNewChat(projectId: projectId, token: token, completion: completion)
     }
     
-    func getChatWithId(projectId: Int, chatId: Int, token: String, completion: @escaping ([ChatMessage]?) -> Void) {
-        projeSihirbaziAIDataAccess.getChatWithId(projectId: projectId, chatId: chatId, token: token, completion: completion)
+    func deleteChat(token: String, chatId: Int, completion: @escaping (Result<Bool, Error>) -> Void) {
+        dataAccess.deleteChat(token: token, chatId: chatId, completion: completion)
     }
     
-    func sendMessage(chatId: Int, message: String, token: String) {
-        projeSihirbaziAIDataAccess.sendMessage(chatId: chatId, message: message, token: token)
+    func getChatWithId(projectId: Int, chatId: Int, token: String, completion: @escaping (Result<[ChatMessage], Error>) -> Void) {
+        dataAccess.getChatWithId(projectId: projectId, chatId: chatId, token: token, completion: completion)
+    }
+    
+    func sendMessage(chatId: Int, message: String, token: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        dataAccess.sendMessage(chatId: chatId, message: message, token: token, completion: completion)
     }
 }

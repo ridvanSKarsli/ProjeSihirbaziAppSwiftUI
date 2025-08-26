@@ -1,6 +1,6 @@
 import Foundation
 
-class ProjectDataAccess: ProjectInterface{
+class ProjectDataAccess: ProjectService{
     
     func getProject(tur: String, page: Int, sector: String, search: String, status: String, company: String, sortOrder: String, completion: @escaping ([Projects]?, Int?, String?) -> Void) {
             let urlString = APIEndpoints.getProjectURL(tur: tur, page: page, sector: sector, search: search, status: status, company: company, sortOrder: sortOrder)

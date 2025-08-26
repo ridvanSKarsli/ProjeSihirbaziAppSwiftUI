@@ -1,13 +1,6 @@
-//
-//  UserDataAccess.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class UserDataAccess: UserInterface{
+class UserDataAccess: UserService {
     
     func getUserData(token: String, completion: @escaping (User?) -> Void) {
         guard let url = URL(string: APIEndpoints.updateAndData.url) else {
@@ -15,7 +8,7 @@ class UserDataAccess: UserInterface{
             return
         }
         
-        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.httpMethod = "GET"
         
@@ -26,7 +19,6 @@ class UserDataAccess: UserInterface{
             }
             
             do {
-                // JSON verisini çözümleyip User nesnesi oluşturuyoruz
                 if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                     let user = self.parseUser(from: jsonResponse)
                     completion(user)
@@ -39,7 +31,6 @@ class UserDataAccess: UserInterface{
         }
         task.resume()
     }
-    
     
     func logIn(email: String, password: String, completion: @escaping (Bool) -> Void) {
         let parameters = [
@@ -57,7 +48,7 @@ class UserDataAccess: UserInterface{
             return
         }
         
-        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpMethod = "POST"
         request.httpBody = postData
@@ -76,11 +67,9 @@ class UserDataAccess: UserInterface{
                     return
                 }
                 
-                // JSON yanıtını parse et ve access token'ı al
                 if let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                    let accessToken = jsonResponse["accessToken"] as? String,
                    let refreshToken = jsonResponse["refreshToken"] as? String {
-                    // Token'ı UserDefaults'a kaydet
                     UserDefaults.standard.set(refreshToken, forKey: "refreshToken")
                     UserDefaults.standard.set(accessToken, forKey: "accessToken")
                     completion(true)
@@ -110,7 +99,7 @@ class UserDataAccess: UserInterface{
             return
         }
         
-        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.httpMethod = "POST"
@@ -198,17 +187,14 @@ class UserDataAccess: UserInterface{
             return
         }
         
-        // Refresh token endpoint URL
         let url = URL(string: APIEndpoints.refresToken.url)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Gönderilecek JSON verisi
         let body: [String: Any] = ["refreshToken": refreshToken]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
-        // API isteği
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data, error == nil else {
                 print("Hata oluştu: \(error?.localizedDescription ?? "Bilinmeyen hata")")
@@ -216,16 +202,12 @@ class UserDataAccess: UserInterface{
                 return
             }
             
-            // Sunucudan gelen yanıtı işleme
             do {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let newAccessToken = json["accessToken"] as? String,
                    let newRefreshToken = json["refreshToken"] as? String {
-                    
-                    // Yeni token'ları UserDefaults'a kaydet
                     UserDefaults.standard.set(newAccessToken, forKey: "accessToken")
                     UserDefaults.standard.set(newRefreshToken, forKey: "refreshToken")
-                    
                     print("Token başarıyla yenilendi ve kaydedildi.")
                     completion(true)
                 } else {
@@ -251,5 +233,4 @@ class UserDataAccess: UserInterface{
         let role = jsonResponse["role"] as? String ?? ""
         return User(id: id, name: name, surname: surname, email: email, phone: phone, imageFile: imageFile, role: role)
     }
-    
 }

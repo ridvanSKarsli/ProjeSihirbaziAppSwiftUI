@@ -3,7 +3,6 @@ import UIKit
 
 class User {
     
-    // Kullanıcı bilgilerini saklayan private değişkenler
     private var id: Int
     private var name: String
     private var surname: String
@@ -12,7 +11,6 @@ class User {
     private var imageFile: String?
     private var role: String
     
-    // Yapıcı fonksiyon (Initializer)
     init(id: Int, name: String, surname: String, email: String, phone: String, imageFile: String, role: String) {
         self.id = id
         self.name = name
@@ -23,7 +21,6 @@ class User {
         self.role = role
     }
     
-    // Kullanıcı bilgilerine erişim sağlayan getter fonksiyonları
     func getId() -> Int { return id }
     func getName() -> String { return name }
     func getSurname() -> String { return surname }
@@ -32,5 +29,3 @@ class User {
     func getImageFile() -> String? { return imageFile }
     func getRole() -> String { return role }
 }
-
-

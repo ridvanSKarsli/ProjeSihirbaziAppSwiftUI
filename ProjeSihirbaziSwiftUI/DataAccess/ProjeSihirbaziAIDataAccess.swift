@@ -1,243 +1,172 @@
-//
-//  ProjeSihirbaziAIDataAccess.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
+// ProjeSihirbaziAIDataAccess.swift
 import Foundation
 
-class ProjeSihirbaziAIDataAccess: ProjeSihirbaziAIInterface{
+final class ProjeSihirbaziAIDataAccess: ProjeSihirbaziAIService {
     
-    func getOldChat(projectId: Int, token: String, completion: @escaping ([ProjeSihirbaziAI]?) -> Void) {
-        // API URL'sini oluştur
+    enum NetworkError: Error, LocalizedError {
+        case invalidURL
+        case noData
+        case badStatus(Int)
+        case decoding(String)
+        case encoding(String)
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidURL: return "Geçersiz URL."
+            case .noData: return "Sunucudan veri alınamadı."
+            case .badStatus(let code): return "Sunucu hatası: \(code)."
+            case .decoding(let msg): return "Çözümleme hatası: \(msg)"
+            case .encoding(let msg): return "JSON oluşturma hatası: \(msg)"
+            }
+        }
+    }
+    
+    private let session: URLSession
+    private let decoder: JSONDecoder
+    
+    init(session: URLSession = .shared) {
+        self.session = session
+        self.decoder = JSONDecoder()
+    }
+    
+    // MARK: - Helpers
+    
+    private func makeRequest(
+        url: URL,
+        method: String,
+        token: String,
+        body: Data? = nil,
+        timeout: TimeInterval = 15
+    ) -> URLRequest {
+        var req = URLRequest(url: url, timeoutInterval: timeout)
+        req.httpMethod = method
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body = body {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = body
+        }
+        return req
+    }
+    
+    private func run<T: Decodable>(
+        _ request: URLRequest,
+        decode type: T.Type,
+        completion: @escaping (Result<T, Error>) -> Void
+    ) {
+        session.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error { return completion(.failure(error)) }
+                guard let http = response as? HTTPURLResponse else { return completion(.failure(NetworkError.noData)) }
+                guard (200...299).contains(http.statusCode) else { return completion(.failure(NetworkError.badStatus(http.statusCode))) }
+                guard let data = data else { return completion(.failure(NetworkError.noData)) }
+                do {
+                    let value = try self.decoder.decode(T.self, from: data)
+                    completion(.success(value))
+                } catch {
+                    completion(.failure(NetworkError.decoding(error.localizedDescription)))
+                }
+            }
+        }.resume()
+    }
+    
+    private func runVoid(
+        _ request: URLRequest,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        session.dataTask(with: request) { _, response, error in
+            DispatchQueue.main.async {
+                if let error = error { return completion(.failure(error)) }
+                guard let http = response as? HTTPURLResponse else { return completion(.failure(NetworkError.noData)) }
+                guard (200...299).contains(http.statusCode) else { return completion(.failure(NetworkError.badStatus(http.statusCode))) }
+                completion(.success(()))
+            }
+        }.resume()
+    }
+    
+    // MARK: - API
+    
+    func getOldChat(projectId: Int, token: String, completion: @escaping (Result<[ProjeSihirbaziAI], Error>) -> Void) {
         guard let url = URL(string: APIEndpoints.getOldChatURL(id: projectId)) else {
-            print("Invalid URL")
-            completion(nil)
-            return
+            return completion(.failure(NetworkError.invalidURL))
         }
-        
-        // URL isteği oluştur
-        var request = URLRequest(url: url, timeoutInterval: 10.0) // Daha uygun bir timeout süresi
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpMethod = "GET"
-        
-        // API isteği başlat
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            // Hata kontrolü
-            if let error = error {
-                print("Request error: \(error.localizedDescription)")
-                completion(nil)
-                return
-            }
-            
-            // HTTP yanıt kontrolü
-            if let httpResponse = response as? HTTPURLResponse {
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    print("Server error: \(httpResponse.statusCode)")
-                    completion(nil)
-                    return
-                }
-            }
-            
-            // Gelen veriyi kontrol et
-            guard let data = data else {
-                print("No data received")
-                completion(nil)
-                return
-            }
-            
-            do {
-                // JSON'u decode et
-                let chats = try JSONDecoder().decode([ProjeSihirbaziAI].self, from: data)
-                completion(chats)
-            } catch {
-                print("Decoding error: \(error.localizedDescription)")
-                completion(nil)
-            }
-        }.resume()
+        let req = makeRequest(url: url, method: "GET", token: token)
+        run(req, decode: [ProjeSihirbaziAI].self, completion: completion)
     }
-
     
-    func createNewChat(projectId: Int, token: String, completion: @escaping (ProjeSihirbaziAI?) -> Void) {
-        // URL'yi güvenli bir şekilde oluştur
+    func createNewChat(projectId: Int, token: String, completion: @escaping (Result<ProjeSihirbaziAI, Error>) -> Void) {
         guard let url = URL(string: APIEndpoints.createNewChatURL(id: projectId)) else {
-            print("Invalid URL")
-            completion(nil)
-            return
+            return completion(.failure(NetworkError.invalidURL))
         }
-        
-        // URL isteği oluştur
-        var request = URLRequest(url: url, timeoutInterval: 10.0) // Daha uygun bir timeout süresi
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpMethod = "POST"
-        
-        // API isteğini başlat
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            // Hata kontrolü
-            if let error = error {
-                print("Request error: \(error.localizedDescription)")
-                completion(nil)
-                return
-            }
-            
-            // HTTP yanıt kontrolü
-            if let httpResponse = response as? HTTPURLResponse {
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    print("Server error: \(httpResponse.statusCode)")
-                    completion(nil)
-                    return
+        let req = makeRequest(url: url, method: "POST", token: token)
+        run(req, decode: ProjeSihirbaziAI.self, completion: completion)
+    }
+    
+    func deleteChat(token: String, chatId: Int, completion: @escaping (Result<Bool, Error>) -> Void) {
+        guard let url = URL(string: APIEndpoints.deleteChatURL(chatId: chatId)) else {
+            return completion(.failure(NetworkError.invalidURL))
+        }
+        // Not: API'niz DELETE yerine GET kullanıyorsa aşağıyı "GET" bırakın.
+        let req = makeRequest(url: url, method: "GET", token: token)
+        session.dataTask(with: req) { _, response, error in
+            DispatchQueue.main.async {
+                if let error = error { return completion(.failure(error)) }
+                guard let http = response as? HTTPURLResponse else { return completion(.failure(NetworkError.noData)) }
+                if (200...299).contains(http.statusCode) {
+                    completion(.success(true))
+                } else {
+                    completion(.failure(NetworkError.badStatus(http.statusCode)))
                 }
-            }
-            
-            // Gelen veriyi kontrol et
-            guard let data = data else {
-                print("No data received")
-                completion(nil)
-                return
-            }
-            
-            do {
-                // Gelen veriyi logla (isteğe bağlı, sadece geliştirme sırasında kullanın)
-                #if DEBUG
-                if let json = try? JSONSerialization.jsonObject(with: data, options: []) {
-                    print("Response JSON: \(json)")
-                }
-                #endif
-                
-                // JSON'u decode et
-                let newChat = try JSONDecoder().decode(ProjeSihirbaziAI.self, from: data)
-                print("Oluşturulan chat: \(newChat)")
-                completion(newChat)
-            } catch {
-                print("Decoding error: \(error.localizedDescription)")
-                completion(nil)
             }
         }.resume()
     }
-
     
-    func deleteChat(token: String, chatId: Int, completion: @escaping (Bool) -> Void) {
-        guard let url = URL(string: APIEndpoints.deleteChatURL(chatId: chatId)) else {
-            print("Invalid URL")
-            completion(false)
-            return
-        }
-        
-        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpMethod = "GET"
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Request error: \(error.localizedDescription)")
-                completion(false)
-                return
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                let success = (200...299).contains(httpResponse.statusCode)
-                completion(success)
-            } else {
-                completion(false)
-            }
-        }
-        
-        task.resume()
-    }
-    
-
-    func getChatWithId(projectId: Int,chatId: Int, token: String, completion: @escaping ([ChatMessage]?) -> Void) {
-        getOldChat(projectId: projectId, token: token) { chats in
-            guard let chats = chats else {
-                print("Failed to get chats")
-                completion(nil)
-                return
-            }
-            
-            
-            for chat in chats {
-                print("Bütün chatte arananın id: \(chat.getId()), bizim aradığımız: \(chatId)")
-                if chat.getId() == chatId {
-                    do {
-                        if let jsonData = chat.chatHistoryJson.data(using: .utf8) {
-                            print("Dönüştürmeden hemen önce JSON: \(String(data: jsonData, encoding: .utf8) ?? "Geçersiz JSON")")
-                            
-                            let decoder = JSONDecoder()
-                            let messages = try decoder.decode([ChatMessage].self, from: jsonData)
-                            completion(messages)
-                            return
-                        } else {
-                            print("JSON string could not be converted to Data.")
-                        }
-                    } catch let DecodingError.keyNotFound(key, context) {
-                        print("Key '\(key.stringValue)' not found:", context.debugDescription)
-                    } catch let DecodingError.typeMismatch(type, context) {
-                        print("Type '\(type)' mismatch:", context.debugDescription)
-                    } catch let DecodingError.valueNotFound(value, context) {
-                        print("Value '\(value)' not found:", context.debugDescription)
-                    } catch {
-                        print("JSON parsing error: \(error.localizedDescription)")
-                    }
+    func getChatWithId(projectId: Int, chatId: Int, token: String, completion: @escaping (Result<[ChatMessage], Error>) -> Void) {
+        getOldChat(projectId: projectId, token: token) { result in
+            switch result {
+            case .failure(let err):
+                completion(.failure(err))
+            case .success(let chats):
+                guard let chat = chats.first(where: { $0.id == chatId }) else {
+                    return completion(.failure(NetworkError.noData))
+                }
+                guard let jsonData = chat.chatHistoryJson.data(using: .utf8) else {
+                    return completion(.failure(NetworkError.decoding("chatHistoryJson geçersiz UTF-8")))
+                }
+                do {
+                    let messages = try self.decoder.decode([ChatMessage].self, from: jsonData)
+                    completion(.success(messages))
+                } catch {
+                    completion(.failure(NetworkError.decoding(error.localizedDescription)))
                 }
             }
-            
-            print("Chat with id \(chatId) not found")
-            completion(nil)
         }
     }
     
-    func sendMessage(chatId: Int, message: String, token: String){
+    func sendMessage(chatId: Int, message: String, token: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let url = URL(string: APIEndpoints.sendMessageURL.url) else {
-            print("Geçersiz URL")
-            return
+            return completion(.failure(NetworkError.invalidURL))
         }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let payload: [String: Any] = [
+        let payload: [String: Any?] = [
             "chatId": chatId,
             "message": message,
-            "fileInfo": NSNull()
+            "fileInfo": nil
         ]
-        
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+            let body = try JSONSerialization.data(withJSONObject: payload, options: [])
+            let req = makeRequest(url: url, method: "POST", token: token, body: body)
+            runVoid(req, completion: completion)
         } catch {
-            print("JSON verisi oluşturulamadı: \(error)")
-            
+            completion(.failure(NetworkError.encoding(error.localizedDescription)))
         }
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Hata: \(error)")
-                
-            } else if let data = data {
-                // Data'yı String'e çevirip bir değişkene tutuyoruz
-                if let responseString = String(data: data, encoding: .utf8) {
-                    print("result: \(responseString)")
-
-                } else {
-
-                }
-            } else {
- 
-            }
-        }.resume()
     }
-
 }
 
-struct ChatMessage: Decodable, Equatable {
-    var id : UUID = UUID()
+struct ChatMessage: Codable, Identifiable, Equatable {
+    let id = UUID()
     let sender: String
     let text: String
-    let fileInfo: String?  // Null olabilir
+    let fileInfo: String?
     
-    // JSON anahtarlarını struct içindeki değişkenlere eşleştiriyoruz
     private enum CodingKeys: String, CodingKey {
         case sender = "Sender"
         case text = "Text"

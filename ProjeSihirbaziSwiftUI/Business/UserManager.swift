@@ -1,22 +1,15 @@
-//
-//  UserManager.swift
-//  ProjeSihirbaziSwiftUI
-//
-//  Created by Rıdvan Karslı on 30.01.2025.
-//
-
 import Foundation
 
-class UserManager: UserInterface{
+class UserManager: UserService {
     
     private let userInteface = UserDataAccess()
     
     func getUserData(token: String, completion: @escaping (User?) -> Void) {
-        userInteface.getUserData(token: token, completion: completion);
+        userInteface.getUserData(token: token, completion: completion)
     }
     
     func logIn(email: String, password: String, completion: @escaping (Bool) -> Void) {
-        if (!email.isEmpty && !password.isEmpty){
+        if !email.isEmpty && !password.isEmpty {
             userInteface.logIn(email: email, password: password, completion: completion)
         }
     }
@@ -32,6 +25,4 @@ class UserManager: UserInterface{
     func refreshToken(completion: @escaping (Bool) -> Void) {
         userInteface.refreshToken(completion: completion)
     }
-    
-    
 }

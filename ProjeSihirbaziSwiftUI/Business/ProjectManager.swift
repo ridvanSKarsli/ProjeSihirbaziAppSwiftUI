@@ -1,6 +1,6 @@
 import Foundation
 
-class ProjectManager: ProjectInterface{
+class ProjectManager: ProjectService{
     
     private let projectDataAccess = ProjectDataAccess()
     
