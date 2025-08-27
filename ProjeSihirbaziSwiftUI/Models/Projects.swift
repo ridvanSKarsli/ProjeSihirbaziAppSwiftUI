@@ -37,4 +37,3 @@ class Projects: Codable, Identifiable {
     func getSektorler() -> String { return sektorler }
 
 }
-

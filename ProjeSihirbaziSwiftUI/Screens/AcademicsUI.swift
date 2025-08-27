@@ -155,9 +155,9 @@ struct AcademicsUI: View {
             DispatchQueue.main.async {
                 isLoading = false
                 switch result {
-                case .success(let academics):
+                case .success(let (academics, totalPages)):
                     self.academicsArr = academics
-                    self.totalPages = academics.count > 0 ? max(academics.count / 10, 1) : 1
+                    self.totalPages = totalPages
                 case .failure(let error):
                     print("Hata: \(error)")
                 }
@@ -206,5 +206,4 @@ struct AcademicsUI: View {
             }
         }
     }
-
 }
